@@ -97,7 +97,7 @@ const editStore = item => {
 
 const deleteStore = async item => {
     if (confirm(`هل أنت متأكد من أنك تريد حذف ${item.name}?`)) {
-        await $fetch(`https://buisness-mangment-system.onrender.com/api/store/${item.id}`, {
+        await $fetch(`https://buisness-mangment-system.onrender.com/api/store/${item._id}`, {
             method: 'DELETE'
         });
         fetchStoresAndTransactions();
