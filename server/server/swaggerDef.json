@@ -1,0 +1,366 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "version": "1.0.0",
+        "title": "Store Management API",
+        "description": "API for managing stores, including operations like creating, reading, updating, and deleting stores, managing transactions, and handling base cash."
+    },
+    "host": "localhost:3001",
+    "basePath": "/api",
+    "schemes": [
+        "http",
+        "https"
+    ],
+    "paths": {
+        "/store": {
+            "get": {
+                "summary": "Get all stores",
+                "responses": {
+                    "200": {
+                        "description": "An array of store objects",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/Store"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "summary": "Create a new store",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Store object that needs to be added to the database",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/Store"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Store created"
+                    }
+                }
+            }
+        },
+        "/store/{storeId}": {
+            "get": {
+                "summary": "Get store by ID",
+                "parameters": [
+                    {
+                        "name": "storeId",
+                        "in": "path",
+                        "description": "ID of the store",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Store details",
+                        "schema": {
+                            "$ref": "#/definitions/Store"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "summary": "Update store by ID",
+                "parameters": [
+                    {
+                        "name": "storeId",
+                        "in": "path",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Store object that needs to be updated",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/Store"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Store updated"
+                    }
+                }
+            },
+            "delete": {
+                "summary": "Delete store by ID",
+                "parameters": [
+                    {
+                        "name": "storeId",
+                        "in": "path",
+                        "description": "ID of the store to delete",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Store deleted"
+                    }
+                }
+            }
+        },
+        "/transactions": {
+            "get": {
+                "summary": "Get all transactions",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/Transaction"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "summary": "Create a new transaction",
+                "parameters": [
+                    {
+                        "name": "storeId",
+                        "in": "formData",
+                        "description": "ID of the store",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "value",
+                        "in": "formData",
+                        "description": "Value of the transaction",
+                        "required": true,
+                        "type": "number"
+                    },
+                    {
+                        "name": "quantity",
+                        "in": "formData",
+                        "description": "Quantity of items in the transaction",
+                        "required": true,
+                        "type": "integer"
+                    },
+                    {
+                        "name": "type",
+                        "in": "formData",
+                        "description": "Type of the transaction (sale, purchase, other)",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/Transaction"
+                        }
+                    }
+                }
+            }
+        },
+        "/transactions/{transactionId}": {
+            "get": {
+                "summary": "Get transaction by ID",
+                "parameters": [
+                    {
+                        "name": "transactionId",
+                        "in": "path",
+                        "description": "ID of the transaction",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/Transaction"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "summary": "Update transaction by ID",
+                "parameters": [
+                    {
+                        "name": "transactionId",
+                        "in": "path",
+                        "description": "ID of the transaction",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "storeId",
+                        "in": "formData",
+                        "description": "ID of the store",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "value",
+                        "in": "formData",
+                        "description": "Value of the transaction",
+                        "required": true,
+                        "type": "number"
+                    },
+                    {
+                        "name": "quantity",
+                        "in": "formData",
+                        "description": "Quantity of items in the transaction",
+                        "required": true,
+                        "type": "integer"
+                    },
+                    {
+                        "name": "type",
+                        "in": "formData",
+                        "description": "Type of the transaction (sale, purchase, other)",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/Transaction"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "summary": "Delete transaction by ID",
+                "parameters": [
+                    {
+                        "name": "transactionId",
+                        "in": "path",
+                        "description": "ID of the transaction",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/cash": {
+            "post": {
+                "summary": "Create base cash",
+                "parameters": [
+                    {
+                        "name": "value",
+                        "in": "formData",
+                        "description": "Initial value of base cash",
+                        "required": true,
+                        "type": "number"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/BaseCash"
+                        }
+                    }
+                }
+            },
+            "get": {
+                "summary": "Get base cash",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/BaseCash"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "summary": "Update base cash",
+                "parameters": [
+                    {
+                        "name": "value",
+                        "in": "formData",
+                        "description": "New value of base cash",
+                        "required": true,
+                        "type": "number"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/BaseCash"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "summary": "Delete base cash",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "Store": {
+            "type": "object",
+            "required": [
+                "name",
+                "numberOfItemsAvailable"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "numberOfItemsAvailable": {
+                    "type": "integer"
+                }
+            }
+        },
+        "Transaction": {
+            "type": "object",
+            "properties": {
+                "store": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "number"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "date": {
+                    "type": "string",
+                    "format": "date-time"
+                }
+            }
+        },
+        "BaseCash": {
+            "type": "object",
+            "properties": {
+                "value": {
+                    "type": "number"
+                }
+            }
+        }
+    }
+}
