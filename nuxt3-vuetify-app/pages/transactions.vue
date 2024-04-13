@@ -94,7 +94,7 @@ const storeHeaders = ref([
 ]);
 const fetchBaseCash = async () => {
     try {
-        const response = await $fetch('http://localhost:3001/api/cash');
+        const response = await $fetch('https://buisness-mangment-system.onrender.com/api/cash');
         baseCash.value = response;
     } catch (error) {
         console.error('Error fetching base cash:', error);
@@ -117,7 +117,7 @@ const transactionHeaders = ref([
 
 const fetchStores = async () => {
     try {
-        const response = await $fetch('http://localhost:3001/api/store');
+        const response = await $fetch('https://buisness-mangment-system.onrender.com/api/store');
         storeItems.value = response.map(store => ({
             _id: store._id,
             store: store._id,
@@ -134,7 +134,7 @@ const fetchStores = async () => {
 
 const fetchTransactions = async () => {
     try {
-        const response = await $fetch('http://localhost:3001/api/transactions');
+        const response = await $fetch('https://buisness-mangment-system.onrender.com/api/transactions');
         transactions.value = response.map(t => ({
             ...t,
             storeName: findStoreName(t.store)
@@ -149,7 +149,7 @@ const fetchTransactions = async () => {
 const handleSaveTransaction = async () => {
     try {
         const method = transaction.value._id ? 'PUT' : 'POST';
-        const url = `http://localhost:3001/api/transactions${transaction.value._id ? `/${transaction.value._id}` : ''}`;
+        const url = `https://buisness-mangment-system.onrender.com/api/transactions${transaction.value._id ? `/${transaction.value._id}` : ''}`;
 
         await $fetch(url, {
             method,
@@ -174,7 +174,7 @@ const handleEditTransaction = (item) => {
 const handleDeleteTransaction = async (item) => {
     if (confirm(`هل أنت متأكد من أنك تريد حذف المعاملة ل ${item.storeId}?`)) {
         try {
-            await $fetch(`http://localhost:3001/api/transactions/${item._id}`, {
+            await $fetch(`https://buisness-mangment-system.onrender.com/api/transactions/${item._id}`, {
                 method: 'DELETE'
             });
             await fetchTransactions();

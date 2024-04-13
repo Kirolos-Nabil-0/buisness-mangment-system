@@ -57,8 +57,8 @@ const headers = ref([
 async function fetchStoresAndTransactions() {
     try {
         const [storesResponse, transactionsResponse] = await Promise.all([
-            $fetch('http://localhost:3001/api/store'),
-            $fetch('http://localhost:3001/api/transactions')
+            $fetch('https://buisness-mangment-system.onrender.com/api/store'),
+            $fetch('https://buisness-mangment-system.onrender.com/api/transactions')
         ]);
 
 
@@ -79,7 +79,7 @@ onMounted(fetchStoresAndTransactions);
 
 const saveStore = async () => {
     const method = store.value._id ? 'PUT' : 'POST';
-    const url = `http://localhost:3001/api/store${store.value._id ? '/' + store.value._id : ''}`;
+    const url = `https://buisness-mangment-system.onrender.com/api/store${store.value._id ? '/' + store.value._id : ''}`;
 
     await $fetch(url, {
         method: method,
@@ -97,7 +97,7 @@ const editStore = item => {
 
 const deleteStore = async item => {
     if (confirm(`هل أنت متأكد من أنك تريد حذف ${item.name}?`)) {
-        await $fetch(`http://localhost:3001/api/store/${item.id}`, {
+        await $fetch(`https://buisness-mangment-system.onrender.com/api/store/${item.id}`, {
             method: 'DELETE'
         });
         fetchStoresAndTransactions();
