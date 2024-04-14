@@ -1,38 +1,38 @@
 <template>
     <v-container>
+        <!-- تخطيط الشبكة لاستجابة الشاشات -->
         <v-row>
-            <!-- Make columns full width on smaller screens -->
-            <v-col cols="12" sm="6" md="4">
+            <v-col cols="12" md="6">
+                <!-- نموذج لإضافة/تحديث المعاملات -->
                 <v-form>
                     <div class="select-container">
                         <select v-model="transaction.storeId">
-                            <option v-for="store in storeItems" :value="store.store" :key="store.store">
-                                {{ store.name }}
+                            <option v-for="store in storeItems" :value="store.store" :key="store.store">{{ store.name }}
                             </option>
                         </select>
                     </div>
-                    <v-text-field v-model="transaction.value" label="قيمة المعاملة" type="number"
-                        :rules="[v => !!v || 'Value is required']" outlined dense required auto-focus>
-                    </v-text-field>
-                    <v-text-field v-model="transaction.quantity" label="كمية العناصر" type="number" outlined dense>
-                    </v-text-field>
+                    <v-text-field v-model="transaction.value" label="قيمة المعاملة" type="number" outlined
+                        dense></v-text-field>
+                    <v-text-field v-model="transaction.quantity" label="كمية العناصر" type="number" outlined
+                        dense></v-text-field>
                     <div class="select-container">
+
                         <select v-model="transaction.type">
-                            <option disabled value="">اختر نوع المعاملة</option>
+                            <option disabled default value="">اختر نوع المعاملة</option>
                             <option value="purchase">شراء</option>
                             <option value="sale">بيع</option>
                         </select>
                     </div>
-                    <v-btn block color="primary" @click="handleSaveTransaction">حفظ المعاملة</v-btn>
+                    <v-btn @click="handleSaveTransaction">حفظ المعاملة</v-btn>
                 </v-form>
             </v-col>
-            <v-col cols="12" sm="6" md="4">
+            <v-col cols="12" md="6">
                 <v-card class="elevation-2">
                     <v-card-title>
                         مخزون المتاجر
                         <v-spacer></v-spacer>
-                        <v-text-field v-model="search" append-icon="mdi-magnify" label="بحث" single-line hide-details>
-                        </v-text-field>
+                        <v-text-field v-model="search" append-icon="mdi-magnify" label="بحث" single-line
+                            hide-details></v-text-field>
                     </v-card-title>
                     <v-card-text>
                         <v-data-table :headers="storeHeaders" :items="storeItems" :search="search" class="elevation-1">
@@ -47,8 +47,9 @@
                 </v-card>
             </v-col>
         </v-row>
+
         <v-row>
-            <v-col cols="12" sm="6">
+            <v-col cols="12" md="6">
                 <v-card outlined>
                     <v-card-title>قيمة المخزن</v-card-title>
                     <v-card-text>
@@ -57,34 +58,25 @@
                 </v-card>
             </v-col>
         </v-row>
+        <!-- جدول عرض المعاملات -->
+        <v-data-table :headers="transactionHeaders" :items="transactions" item-key="id">
+            <template v-slot:item.actions="{ item }">
+                <v-btn icon color="blue" @click="handleEditTransaction(item)">
+                    <v-icon>mdi-pencil</v-icon>
+                </v-btn>
+                <v-btn icon color="red" @click="handleDeleteTransaction(item)">
+                    <v-icon>mdi-delete</v-icon>
+                </v-btn>
 
-        <!-- Transactions Table - Adjusted for mobile responsiveness -->
-        <v-row>
-            <v-col cols="12">
-                <v-data-table :headers="transactionHeaders" :items="transactions" item-key="id" mobile-breakpoint="500">
-                    <template v-slot:item.actions="{ item }">
-                        <v-btn icon color="blue" @click="handleEditTransaction(item)">
-                            <v-icon>mdi-pencil</v-icon>
-                        </v-btn>
-                        <v-btn icon color="red" @click="handleDeleteTransaction(item)">
-                            <v-icon>mdi-delete</v-icon>
-                        </v-btn>
-                    </template>
-                </v-data-table>
-            </v-col>
-        </v-row>
+
+            </template>
+
+        </v-data-table>
     </v-container>
 </template>
+
 <script setup>
-import { ref, onMounted, watch } from 'vue';
-import { debounce } from 'lodash-es'; // Make sure lodash-es is installed
-
-const search = ref('');
-const debouncedSearch = ref('');
-
-watch(search, debounce((newValue) => {
-    debouncedSearch.value = newValue;
-}, 300));
+import { ref, onMounted } from 'vue';
 
 const transaction = ref({
     storeId: '',
@@ -180,7 +172,8 @@ const handleEditTransaction = (item) => {
 };
 
 const handleDeleteTransaction = async (item) => {
-    if (confirm(`هل أنت متأكد من أنك تريد حذف المعاملة ل ${item.storeId}?`)) {
+    if (confirm(`هل أنت متأكد من أنك تريد حذف المعاملة ل ${item._id}?`)) {
+        console.log(item);
         try {
             await $fetch(`https://buisness-mangment-system.onrender.com/api/transactions/${item._id}`, {
                 method: 'DELETE'
@@ -197,44 +190,41 @@ onMounted(async () => {
     await fetchStores();
     await fetchTransactions();
     await fetchBaseCash(); // Fetch base cash on component mount
-    console.log(storeItems.value);
 });
 </script>
+
 <style scoped>
 .select-container {
     margin: 10px 0;
     position: relative;
-    display: block;
-    /* Adjust as necessary for mobile */
 }
 
 .select-container select {
     width: 100%;
-    padding: 12px;
-    /* Larger padding for easier interaction */
+    padding: 10px;
     border: 1px solid #ced4da;
     border-radius: 4px;
     background-color: white;
     -webkit-appearance: none;
-    /* Remove default styling */
     -moz-appearance: none;
     appearance: none;
 }
 
-.v-btn {
-    margin-top: 10px;
-    /* More space around buttons */
+.select-container::after {
+    content: '▼';
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    pointer-events: none;
 }
 
-.v-card-title,
-.v-text-field {
-    flex-direction: column;
-    /* Stack elements vertically on smaller screens */
-    align-items: start;
+.v-card-title {
+    display: flex;
+    align-items: center;
 }
 
 .v-text-field {
-    max-width: 100%;
-    /* Allow text fields to fill container on small screens */
+    max-width: 250px;
 }
 </style>
