@@ -10,13 +10,17 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@pinia/nuxt": "^0.5.1",
     "lodash-es": "^4.17.21",
     "nuxt": "^3.11.2",
+    "pinia": "^2.1.7",
     "vue": "^3.4.21",
     "vue-router": "^4.3.0",
     "vuetify": "^3.5.15"
   },
   "devDependencies": {
-    "@mdi/font": "^7.4.47"
+    "@mdi/font": "^7.4.47",
+    "@nuxtjs/pwa": "^3.3.5",
+    "@vite-pwa/nuxt": "^0.6.0"
   }
 }

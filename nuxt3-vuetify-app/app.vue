@@ -1,5 +1,8 @@
 <template>
+  <VitePwaManifest />
+
   <v-app>
+    <!--import Vite Manfiest -->
     <v-main>
       <NuxtPage />
       <v-bottom-navigation>
