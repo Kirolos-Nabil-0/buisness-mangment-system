@@ -1,5 +1,9 @@
-export default {
-  modules: ['@vite-pwa/nuxt'], // Ensure this is 'modules' and not 'module'
+
+export default{
+  modules: [
+    '@vite-pwa/nuxt',
+    '@pinia/nuxt'
+  ],
   css: ['vuetify/styles'],
 
   build: {
@@ -66,21 +70,18 @@ export default {
         },
       ]
     },
-
-
     workbox: {
       runtimeCaching: [
         {
-          urlPattern: /^https?.*/,
+          urlPattern: /^https?.*/, // Cache all https requests
           handler: 'StaleWhileRevalidate',
           options: {
             cacheName: 'https-cache',
           }
         },
         {
-          urlPattern: 'https://buisness-mangment-system.onrender.com/api/.*',
+          urlPattern: /^https:\/\/buisness-mangment-system.onrender.com\/api\/.*/, // Specific API caching
           handler: 'StaleWhileRevalidate',
-          method: 'GET',
           options: {
             cacheName: 'api-cache',
             expiration: {
@@ -93,7 +94,7 @@ export default {
           }
         },
         {
-          urlPattern: /\.(?:png|gif|jpg|jpeg|svg)$/,
+          urlPattern: /\.(?:png|gif|jpg|jpeg|svg)$/, // Cache images
           handler: 'CacheFirst',
           options: {
             cacheName: 'image-cache',
@@ -104,7 +105,7 @@ export default {
           }
         },
         {
-          urlPattern: /.*\.(?:css|js)/,
+          urlPattern: /.*\.(?:css|js)/, // Cache CSS and JavaScript
           handler: 'StaleWhileRevalidate',
           options: {
             cacheName: 'static-resources',
@@ -115,5 +116,5 @@ export default {
       navigateFallback: '/',
     },
     devtools: true,
-  },
+  }
 };

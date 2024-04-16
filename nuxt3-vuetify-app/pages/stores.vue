@@ -55,9 +55,9 @@
         </v-dialog>
     </v-container>
 </template>
-
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
+import localforage from 'localforage';
 import { debounce } from 'lodash-es';
 
 const isSaving = ref(false);
@@ -66,12 +66,13 @@ const alert = ref({ show: false, type: 'success', message: '' });
 const store = ref({ name: '', numberOfItemsAvailable: 0 });
 const stores = ref([]);
 const search = ref("");
+const offlineActions = ref([]);
 
 const headers = ref([
-    { title: 'اسم الصنف', value: 'name' },
-    { title: 'عدد العناصر', value: 'numberOfItemsAvailable' },
-    { title: 'قيمة المعاملات', value: 'totalValue' },
-    { title: 'الإجراءات', value: 'actions', sortable: false },
+    { text: 'اسم الصنف', value: 'name' },
+    { text: 'عدد العناصر', value: 'numberOfItemsAvailable' },
+    { text: 'قيمة المعاملات', value: 'totalValue' },
+    { text: 'الإجراءات', value: 'actions', sortable: false },
 ]);
 
 const debouncedSearch = ref("");
@@ -81,76 +82,114 @@ watch(search, debounce((newSearch) => {
 }, 300));
 
 const filteredStores = computed(() => {
-    return stores.value.filter((store) => {
-        return store.name.toLowerCase().includes(debouncedSearch.value.toLowerCase()) ||
-            store.numberOfItemsAvailable.toString().includes(debouncedSearch.value) ||
-            store.totalValue.toFixed(2).includes(debouncedSearch.value);
+    const searchLower = debouncedSearch.value.toLowerCase();
+    return stores.value.filter(store => {
+        const nameMatch = store.name.toLowerCase().includes(searchLower);
+        const itemsAvailableMatch = store.numberOfItemsAvailable.toString().includes(debouncedSearch.value);
+        const totalValueMatch = store.totalValue.toFixed(2).includes(debouncedSearch.value);
+        return nameMatch || itemsAvailableMatch || totalValueMatch;
     });
 });
 
-const cachedTransactions = ref({});
+onMounted(() => {
+    fetchStoresAndTransactions().catch(error => {
+        console.error("Failed to perform initial fetch:", error);
+        alert.value = { show: true, type: 'error', message: 'Failed to load initial data. Check network connection.' };
+    });
+});
 
 async function fetchStoresAndTransactions() {
     try {
-        const storesResponse = await $fetch('https://buisness-mangment-system.onrender.com/api/store');
-        if (!cachedTransactions.value.date || new Date() - cachedTransactions.value.date > 300000) { // cache expiration: 5 minutes
-            const transactionsResponse = await $fetch('https://buisness-mangment-system.onrender.com/api/transactions');
-            cachedTransactions.value = { data: transactionsResponse, date: new Date() };
-        }
-
-        const storesWithTotal = storesResponse.map(store => ({
-            ...store,
-            totalValue: cachedTransactions.value.data
-                .filter(transaction => transaction.store === store._id)
-                .reduce((acc, transaction) => acc + transaction.value, 0)
-        }));
-
-        stores.value = storesWithTotal;
+        const storesResponse = await fetchStores();
+        stores.value = processStores(storesResponse);
     } catch (error) {
-        console.error("Failed to fetch data:", error);
+        console.error("Failed to fetch data, using local cache:", error);
+        loadStoresFromCache();
     }
 }
 
-onMounted(fetchStoresAndTransactions);
+async function fetchStores() {
+    try {
+        const response = await fetch('https://buisness-mangment-system.onrender.com/api/store');
+        const data = await response.json();
+        await localforage.setItem('stores', data); // Save to localforage
+        return data;
+    } catch (error) {
+        console.error('Network error when fetching stores:', error);
+        throw error;
+    }
+}
 
-const saveStore = debounce(async () => {
+function processStores(data) {
+    return data.map(store => ({
+        ...store,
+        totalValue: store.transactions && Array.isArray(store.transactions) ?
+            store.transactions.reduce((acc, transaction) => acc + transaction.value, 0) : 0
+    }));
+}
+
+function loadStoresFromCache() {
+    localforage.getItem('stores').then(storedStores => {
+        if (storedStores) {
+            stores.value = processStores(storedStores);
+            alert.value = { show: true, type: 'info', message: 'Loaded data from cache due to network error.' };
+        } else {
+            alert.value = { show: true, type: 'info', message: 'No data in cache.' };
+        }
+    }).catch(error => {
+        console.error('Error loading stores from cache:', error);
+        alert.value = { show: true, type: 'error', message: 'Failed to load cached data.' };
+    });
+}
+
+
+async function saveStore() {
+    if (!navigator.onLine) {
+        await localforage.setItem('offline-actions', [...offlineActions.value, store.value]);
+        alert.value = { show: true, type: 'info', message: 'No internet connection. Data saved locally and will sync when online.' };
+        return;
+    }
+    isSaving.value = true;
     const method = store.value._id ? 'PUT' : 'POST';
     const url = `https://buisness-mangment-system.onrender.com/api/store${store.value._id ? '/' + store.value._id : ''}`;
-
-    await $fetch(url, {
-        method: method,
-        body: store.value
-    });
-
-    store.value = { name: '', numberOfItemsAvailable: 0 };
-    fetchStoresAndTransactions();
-}, 300);
-
-const editStore = item => {
-    store.value = { ...item };
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-};
-
-
-const confirmDelete = item => {
-    dialog.value = { show: true, item };
-};
-const deleteStore = async item => {
     try {
-        await $fetch(`https://buisness-mangment-system.onrender.com/api/store/${item._id}`, {
-            method: 'DELETE'
+        await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(store.value)
         });
-        alert.value = { show: true, type: 'success', message: 'تم حذف العنصر بنجاح' };
-    } catch (error) {
-        console.error('Error deleting item:', error);
-        alert.value = { show: true, type: 'error', message: 'فشل في حذف العنصر' };
-    } finally {
-        dialog.value.show = false;  // Ensure the dialog is closed after the operation
         fetchStoresAndTransactions();
+    } catch (error) {
+        console.error('Error saving item:', error);
+        alert.value = { show: true, type: 'error', message: 'Failed to save. Please try again later.' };
+    } finally {
+        isSaving.value = false;
     }
-};
+}
 
+onMounted(async () => {
+    if (navigator.onLine) {
+        fetchStoresAndTransactions().catch(console.error);
+    } else {
+        loadStoresFromCache();
+    }
+    syncOfflineActions();
+});
+
+async function syncOfflineActions() {
+    const actions = await localforage.getItem('offline-actions');
+    if (actions && actions.length > 0) {
+        for (const action of actions) {
+            // Attempt to re-save each offline action
+            store.value = action;
+            await saveStore();
+        }
+        await localforage.setItem('offline-actions', []);
+    }
+}
 </script>
+
+
 <style scoped>
 .v-card {
     background-color: #fff;

@@ -11,10 +11,13 @@
   },
   "dependencies": {
     "@pinia/nuxt": "^0.5.1",
+    "localforage": "^1.10.0",
     "lodash-es": "^4.17.21",
     "nuxt": "^3.11.2",
     "pinia": "^2.1.7",
     "vue": "^3.4.21",
+    "vue-demi": "^0.14.7",
+    "vue-query": "^1.26.0",
     "vue-router": "^4.3.0",
     "vuetify": "^3.5.15"
   },
