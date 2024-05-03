@@ -77,38 +77,36 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import localforage from 'localforage';
 
-const storeItems = ref([]);
-const transactions = ref([]);
-const baseCash = ref({ value: 0 });
-const search = ref('');
 const transaction = ref({
     storeId: '',
     value: 0,
     quantity: 0,
     type: ''
 });
-const networkOnline = ref(navigator.onLine);  // Track network status
 
-const cleanForStorage = (data) => {
-    return JSON.parse(JSON.stringify(data));
-};
-
-const findStoreName = (storeId) => {
-    const store = storeItems.value.find(s => s._id === storeId);
-    return store ? store.name : 'Unknown Store';
-};
-
-// Use this function when setting items to localForage
-localforage.setItem('stores', cleanForStorage(storeItems.value));
-
-
+const storeItems = ref([]);
+const transactions = ref([]);
+const baseCash = ref({ value: 0 });
 const storeHeaders = ref([
     { title: 'اسم المتجر', value: 'name' },
     { title: 'عدد العناصر', value: 'numberOfItemsAvailable' }
 ]);
+const fetchBaseCash = async () => {
+    try {
+        const response = await $fetch('https://buisness-mangment-system.onrender.com/api/cash');
+        baseCash.value = response;
+    } catch (error) {
+        console.error('Error fetching base cash:', error);
+    }
+};
+const findStoreName = (storeId) => {
+    console.log("items", storeItems.value);
+    console.log("id", storeId);
+    const store = storeItems.value.find(s => s._id === storeId);
 
+    return store ? store.name : 'Unknown Store';
+};
 const transactionHeaders = ref([
     { title: 'اسم الصنف', value: 'storeName' },
     { title: 'قيمة المعاملة', value: 'value' },
@@ -116,115 +114,82 @@ const transactionHeaders = ref([
     { title: 'نوع المعاملة', value: 'type' },
     { title: 'الإجراءات', value: 'actions', sortable: false }
 ]);
-async function fetchStores() {
+
+const fetchStores = async () => {
     try {
-        const response = await fetch('https://buisness-mangment-system.onrender.com/api/store');
-        const data = await response.json();
-        storeItems.value = data.map(store => ({
+        const response = await $fetch('https://buisness-mangment-system.onrender.com/api/store');
+        storeItems.value = response.map(store => ({
             _id: store._id,
             store: store._id,
             name: store.name,
-            numberOfItemsAvailable: store.numberOfItemsAvailable
-        }));
-        await localforage.setItem('stores', cleanForStorage(storeItems.value));
-    } catch (error) {
-        console.error('Network error fetching stores, using cached data:', error);
-        storeItems.value = await localforage.getItem('stores') || [];
-    }
-}
-window.addEventListener('online', () => {
-    networkOnline.value = true;
-    syncPendingTransactions();
-    fetchStores();
-    fetchTransactions();
-    fetchBaseCash();
-});
+            numberOfItemsAvailable: store.numberOfItemsAvailable  // Ensure this property is retrieved and stored
 
-window.addEventListener('offline', () => {
-    networkOnline.value = false;
-});
+
+        }));
+        console.log(storeItems.value);
+    } catch (error) {
+        console.error('Error fetching stores:', error);
+    }
+};
 
 const fetchTransactions = async () => {
     try {
-        const response = await fetch('https://buisness-mangment-system.onrender.com/api/transactions');
-        const data = await response.json();
-        transactions.value = data.map(t => ({
+        const response = await $fetch('https://buisness-mangment-system.onrender.com/api/transactions');
+        transactions.value = response.map(t => ({
             ...t,
             storeName: findStoreName(t.store)
         }));
-        localforage.setItem('transactions', transactions.value); // Cache transactions
+        console.log(transactions.value);
+
     } catch (error) {
-        console.error('Error fetching transactions, using cached data:', error);
-        transactions.value = await localforage.getItem('transactions') || [];
+        console.error('Error fetching transactions:', error);
     }
 };
 
-const fetchBaseCash = async () => {
+const handleSaveTransaction = async () => {
     try {
-        const response = await fetch('https://buisness-mangment-system.onrender.com/api/cash');
-        const cashData = await response.json();
-        baseCash.value = cashData || { value: 0 }; // Ensure default object structure
-        localforage.setItem('baseCash', baseCash.value);
-    } catch (error) {
-        console.error('Error fetching base cash, using cached data:', error);
-        baseCash.value = await localforage.getItem('baseCash') || { value: 0 };
-    }
-};
+        const method = transaction.value._id ? 'PUT' : 'POST';
+        const url = `https://buisness-mangment-system.onrender.com/api/transactions${transaction.value._id ? `/${transaction.value._id}` : ''}`;
 
-async function handleSaveTransaction() {
-    if (!networkOnline.value) {
-        // Save pending transactions to local storage
-        cacheTransactionForLater(transaction.value);
-        alert('Saved locally: No internet connection. Will sync when online.');
-        return;
-    }
-    const method = transaction.value._id ? 'PUT' : 'POST';
-    const url = `https://buisness-mangment-system.onrender.com/api/transactions${transaction.value._id ? `/${transaction.value._id}` : ''}`;
-    try {
-        await fetch(url, {
-            method: method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(transaction.value)
+        await $fetch(url, {
+            method,
+            body: transaction.value
         });
+
         transaction.value = { storeId: '', value: 0, quantity: 0, type: '' };
-        await fetchTransactions(); // Update cached data
-        await fetchBaseCash();
-    } catch (error) {
-        console.error('Error saving transaction, caching for later sync:', error);
-        cacheTransactionForLater(transaction.value);
-    }
-}
-
-function cacheTransactionForLater(transaction) {
-    localforage.getItem('pendingTransactions').then(pending => {
-        const updates = pending || [];
-        updates.push(cleanForStorage(transaction));
-        localforage.setItem('pendingTransactions', updates);
-    });
-}
-
-// Add functionality to check for and sync pending transactions when online
-window.addEventListener('online', syncPendingTransactions);
-async function syncPendingTransactions() {
-    const pendingTransactions = await localforage.getItem('pendingTransactions') || [];
-    for (let txn of pendingTransactions) {
-        transaction.value = txn;
-        handleSaveTransaction(); // Be sure to modify this function to be usable like this
-    }
-    localforage.setItem('pendingTransactions', []);
-}
-
-onMounted(async () => {
-    if (networkOnline.value) {
-        await fetchStores();
+        console.log(transaction.value);
         await fetchTransactions();
         await fetchBaseCash();
-    } else {
-        // Load from cache if offline
-        storeItems.value = await localforage.getItem('stores') || [];
-        transactions.value = await localforage.getItem('transactions') || [];
-        baseCash.value = await localforage.getItem('baseCash') || { value: 0 };
+    } catch (error) {
+        console.error('Error saving transaction:', error);
+        console.log(transaction.value);
     }
+};
+
+const handleEditTransaction = (item) => {
+    transaction.value = { ...item };
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+const handleDeleteTransaction = async (item) => {
+    if (confirm(`هل أنت متأكد من أنك تريد حذف المعاملة ل ${item._id}?`)) {
+        console.log(item);
+        try {
+            await $fetch(`https://buisness-mangment-system.onrender.com/api/transactions/${item._id}`, {
+                method: 'DELETE'
+            });
+            await fetchTransactions();
+            await fetchBaseCash();
+        } catch (error) {
+            console.error('Error deleting transaction:', error);
+        }
+    }
+};
+
+onMounted(async () => {
+    await fetchStores();
+    await fetchTransactions();
+    await fetchBaseCash(); // Fetch base cash on component mount
 });
 </script>
 
